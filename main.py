@@ -83,12 +83,6 @@ modelA.set_draw_details(shader, [texture])
 
 # Copy target vertices into normal buffer
 for bufA, bufB in zip(modelA.buf, modelB.buf):
-
-    if len(bufA.array_buffer) != len(bufB.array_buffer):
-        raise ValueError(
-            "OBJ files must have identical topology"
-        )
-
     positionB = bufB.array_buffer[:, 0:3]
 
     # overwrite normals with morph target positions
