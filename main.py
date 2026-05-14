@@ -31,10 +31,7 @@ void main(void) {
 
     float morphAmount = unif[16].x;
 
-    vec3 positionA = vertex;
-    vec3 positionB = normal;
-
-    vec3 pos = mix(positionA, positionB, morphAmount);
+    vec3 pos = mix(vertexA, vertexB, morphAmount);
 
     gl_Position = modelviewmatrix[1] * modelviewmatrix[0] * vec4(pos, 1.0);
 
@@ -77,8 +74,8 @@ modelB = pi3d.Model(
 print("buffers A:", len(modelA.buf))
 print("buffers B:", len(modelB.buf))
 
-positionB = modelA.buf.array_buffer[:, 0:3]
-positionB = modelB.buf.array_buffer[:, 0:3]
+positionA = modelA.buf[0].array_buffer[:, 0:3]
+positionB = modelB.buf[0].array_buffer[:, 0:3]
 
 modelA.set_shader(shader)
 
