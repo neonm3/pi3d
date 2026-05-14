@@ -19,11 +19,11 @@ light = pi3d.Light(
 )
 
 # Load texture
-texture = pi3d.Texture("Meshy_AI_Crimson_Core_0514103036_texture.png")
+texture = pi3d.Texture("Meshy_AI_Eye_of_the_Machine_0514103702_texture.png")
 
 # Load OBJ model
 model = pi3d.Model(
-    file_string="Meshy_AI_Crimson_Core_0514103036_texture.obj",
+    file_string="Meshy_AI_Eye_of_the_Machine_0514103702_texture.obj",
     name="object",
     x=0,
     y=0,
