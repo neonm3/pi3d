@@ -36,8 +36,6 @@ void main(void) {
     vec3 pos = mix(positionA, positionB, morphAmount);
 
     gl_Position = modelviewmatrix[1] * modelviewmatrix[0] * vec4(pos, 1.0);
-
-    uv = texcoord;
 }
 """
 
@@ -50,8 +48,7 @@ uniform sampler2D tex0;
 varying vec2 uv;
 
 void main(void) {
-    vec2 fixedUV = vec2(uv.x, 1.0 - uv.y);
-    gl_FragColor = texture2D(tex0, fixedUV);
+    gl_FragColor = texture2D(tex0, uv);
 }
 """
 
@@ -144,27 +141,21 @@ while DISPLAY.loop_running():
 
     elif key == ord("a"):
         motion += 0.1
-        print("Motion:", round(motion, 2))
 
     elif key == ord("z"):
         motion = max(0.0, motion - 0.1)
-        print("Motion:", round(motion, 2))
 
     elif key == ord("s"):
         scale += 0.05
-        print("Scale:", round(scale, 2))
 
     elif key == ord("x"):
         scale = max(0.05, scale - 0.05)
-        print("Scale:", round(scale, 2))
 
     elif key == ord("d"):
         morphAmount = min(1.0, morphAmount + 0.05)
-        print("Morph:", round(morphAmount, 2))
 
     elif key == ord("c"):
         morphAmount = max(0.0, morphAmount - 0.05)
-        print("Morph:", round(morphAmount, 2))
 
 keys.close()
 DISPLAY.destroy()
