@@ -104,8 +104,6 @@ for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
     # normal = positionB
     positionB = bufB.array_buffer[:, 0:3]
 
-    bufA.re_init(normals=positionB)
-
 modelA.set_shader(shader)
 
 modelA.set_draw_details(shader, [texture])
