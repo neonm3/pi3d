@@ -40,24 +40,44 @@ model.set_normal_shine(texture, 16.0)
 keys = pi3d.Keyboard()
 start_time = time.time()
 
+intensity = 1.0
+scale = 1.0
+
 while DISPLAY.loop_running():
     t = time.time() - start_time
 
-    # Slow non-circular "camera orbit" feel,
-    # implemented as object rotation.
-    yaw = math.sin(t * 0.45) * 10.0
-    pitch = math.sin(t * 0.31 + 1.2) * 5.0
-    roll = math.sin(t * 0.19 + 0.7) * 1.5
+    yaw = math.sin(t * 0.45) * 10.0 * intensity
+    pitch = math.sin(t * 0.31 + 1.2) * 5.0 * intensity
+    roll = math.sin(t * 0.19 + 0.7) * 1.5 * intensity
 
-    # Keep it mostly flat / front-facing
     model.rotateToX(pitch)
     model.rotateToY(yaw)
     model.rotateToZ(roll)
 
+    model.scale(scale, scale, scale)
+
     model.draw()
 
-    if keys.read() == 27:
+    key = keys.read()
+
+    if key == 27:  # ESC
         break
+
+    elif key == ord('a'):
+        intensity += 0.1
+        print("Intensity:", round(intensity, 2))
+
+    elif key == ord('z'):
+        intensity = max(0.0, intensity - 0.1)
+        print("Intensity:", round(intensity, 2))
+
+    elif key == ord('s'):
+        scale += 0.05
+        print("Scale:", round(scale, 2))
+
+    elif key == ord('x'):
+        scale = max(0.05, scale - 0.05)
+        print("Scale:", round(scale, 2))
 
 keys.close()
 DISPLAY.destroy()
