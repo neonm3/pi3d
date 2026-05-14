@@ -19,7 +19,7 @@ light = pi3d.Light(
 )
 
 # Load texture
-texture = pi3d.Texture("model_texture.png")
+texture = pi3d.Texture("Meshy_AI_Crimson_Core_0514103036_texture.png")
 
 # Load OBJ model
 model = pi3d.Model(
