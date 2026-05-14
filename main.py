@@ -115,11 +115,7 @@ for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
     bufA._loaded_opengl = False
     
 modelA.set_shader(shader)
-
 modelA.set_draw_details(shader, [texture])
-
-modelA.set_textures([texture])
-
 modelA.set_material((1.0, 1.0, 1.0))
 
 keys = pi3d.Keyboard()
