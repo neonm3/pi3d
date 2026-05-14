@@ -10,6 +10,8 @@ DISPLAY = pi3d.Display.create(
 CAMERA = pi3d.Camera()
 shader = pi3d.Shader("uv_light")
 
+texture = pi3d.Texture("model_texture.png")
+
 model = pi3d.Model(
     file_string="eyeOpen.obj",
     x=0,
@@ -21,6 +23,7 @@ model = pi3d.Model(
 )
 
 model.set_shader(shader)
+model.set_normal_shine(texture, 16.0)
 
 keys = pi3d.Keyboard()
 
