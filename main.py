@@ -23,7 +23,7 @@ texture = pi3d.Texture("model_texture.png")
 
 # Load OBJ model
 model = pi3d.Model(
-    file_string="model.obj",
+    file_string="Meshy_AI_Crimson_Core_0514103036_texture.obj",
     name="object",
     x=0,
     y=0,
