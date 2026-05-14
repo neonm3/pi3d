@@ -36,6 +36,8 @@ void main(void) {
     vec3 pos = mix(positionA, positionB, morphAmount);
 
     gl_Position = modelviewmatrix[1] * modelviewmatrix[0] * vec4(pos, 1.0);
+    
+    uv = texcoord;
 }
 """
 
