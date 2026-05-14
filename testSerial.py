@@ -1,7 +1,19 @@
 import serial
 import pi3d
 
-ser = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=0)
+# ----------------------------
+# SERIAL
+# ----------------------------
+
+ser = serial.Serial(
+    '/dev/ttyUSB0',
+    baudrate=115200,
+    timeout=0
+)
+
+# ----------------------------
+# DISPLAY
+# ----------------------------
 
 DISPLAY = pi3d.Display.create(
     frames_per_second=60,
@@ -10,7 +22,22 @@ DISPLAY = pi3d.Display.create(
 
 CAMERA = pi3d.Camera(is_3d=False)
 
-font = pi3d.Font("fonts/FreeSans.ttf", color=(255, 255, 255, 255))
+# ----------------------------
+# KEYBOARD
+# ----------------------------
+
+keyboard = pi3d.Keyboard()
+
+# ----------------------------
+# FONT
+# ----------------------------
+
+font = pi3d.Font(
+    "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+    color=(255, 255, 255, 255)
+)
+
+shader = pi3d.Shader("uv_flat")
 
 serial_text = pi3d.String(
     font=font,
@@ -21,13 +48,33 @@ serial_text = pi3d.String(
     size=32
 )
 
-serial_text.set_shader(pi3d.Shader("uv_flat"))
+serial_text.set_shader(shader)
+
+# ----------------------------
+# MAIN LOOP
+# ----------------------------
 
 while DISPLAY.loop_running():
 
+    # ------------------------
+    # ESCAPE KEY
+    # ------------------------
+
+    key = keyboard.read()
+
+    if key == 27:   # ESC key
+        break
+
+    # ------------------------
+    # SERIAL READ
+    # ------------------------
+
     if ser.in_waiting:
         try:
-            line = ser.readline().decode("utf-8", errors="ignore").strip()
+            line = ser.readline().decode(
+                "utf-8",
+                errors="ignore"
+            ).strip()
 
             if line:
                 print("SERIAL:", line)
@@ -40,12 +87,22 @@ while DISPLAY.loop_running():
                     z=1.0,
                     size=32
                 )
-                serial_text.set_shader(pi3d.Shader("uv_flat"))
+
+                serial_text.set_shader(shader)
 
         except Exception as e:
             print("Serial error:", e)
 
+    # ------------------------
+    # DRAW
+    # ------------------------
+
     serial_text.draw()
 
+# ----------------------------
+# CLEANUP
+# ----------------------------
+
+keyboard.close()
 ser.close()
 DISPLAY.destroy()
