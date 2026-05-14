@@ -18,8 +18,8 @@ VERT_SHADER = """
 precision mediump float;
 #endif
 
-attribute vec3 vertex;
-attribute vec3 normal;
+attribute vec3 vertexA;
+attribute vec3 vertexB;
 attribute vec2 texcoord;
 
 uniform mat4 modelviewmatrix[2];
@@ -67,13 +67,7 @@ shader = pi3d.Shader(
 texture = pi3d.Texture(TEXTURE)
 
 modelA = pi3d.Model(
-    file_string=OBJ_A,
-    x=0,
-    y=0,
-    z=8.0,
-    sx=1.0,
-    sy=1.0,
-    sz=1.0
+    file_string=OBJ_A
 )
 
 modelB = pi3d.Model(
@@ -83,26 +77,8 @@ modelB = pi3d.Model(
 print("buffers A:", len(modelA.buf))
 print("buffers B:", len(modelB.buf))
 
-if len(modelA.buf) != len(modelB.buf):
-    raise ValueError(
-        "OBJ files must have same number of mesh buffers"
-    )
-
-for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
-
-    print("buffer", i)
-    print("verts A:", len(bufA.array_buffer))
-    print("verts B:", len(bufB.array_buffer))
-
-    if len(bufA.array_buffer) != len(bufB.array_buffer):
-        raise ValueError(
-            "OBJ files must have identical topology"
-        )
-
-    # Store target mesh vertices in normal attribute.
-    # vertex = positionA
-    # normal = positionB
-    positionB = bufB.array_buffer[:, 0:3]
+positionB = modelA.buf.array_buffer[:, 0:3]
+positionB = modelB.buf.array_buffer[:, 0:3]
 
 modelA.set_shader(shader)
 
