@@ -48,14 +48,11 @@ precision mediump float;
 #endif
 
 uniform sampler2D tex0;
-
 varying vec2 uv;
 
 void main(void) {
-
-    vec4 tex = texture2D(tex0, uv);
-
-    gl_FragColor = vec4(uv.x, uv.y, 0.0, 1.0);
+    vec4 col = texture2D(tex0, vec2(uv.x, 1.0 - uv.y));
+    gl_FragColor = col;
 }
 """
 
@@ -65,6 +62,8 @@ shader = pi3d.Shader(
 )
 
 texture = pi3d.Texture(TEXTURE)
+modelA.set_shader(shader)
+modelA.set_draw_details(shader, [texture])
 
 modelA = pi3d.Model(
     file_string=OBJ_A,
@@ -114,9 +113,6 @@ for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
     # tell pi3d to upload modified buffer
     bufA._loaded_opengl = False
     
-modelA.set_shader(shader)
-modelA.set_draw_details(shader, [texture])
-modelA.set_material((1.0, 1.0, 1.0))
 
 keys = pi3d.Keyboard()
 
