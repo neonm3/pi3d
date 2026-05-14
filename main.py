@@ -1,3 +1,5 @@
+import time
+import math
 import pi3d
 
 DISPLAY = pi3d.Display.create(
