@@ -38,6 +38,7 @@ model.set_normal_shine(texture, 16.0)
 
 # Keyboard
 keys = pi3d.Keyboard()
+start_time = time.time()
 
 while DISPLAY.loop_running():
     t = time.time() - start_time
