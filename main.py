@@ -1,10 +1,8 @@
 import pi3d
 
-# Display setup
 DISPLAY = pi3d.Display.create(
-    background=(0.05, 0.05, 0.08, 1.0),
-    w=800,
-    h=600
+    frames_per_second=60,
+    background=(0.0, 0.0, 0.0, 1.0)
 )
 
 # Camera and shader
