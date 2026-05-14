@@ -2,9 +2,9 @@ import time
 import math
 import pi3d
 
-OBJ_A = "eyeOpen.obj"
-OBJ_B = "eyeOpen.obj"
-TEXTURE = "eyeTexture.png"
+OBJ_A = "eye_open.obj"
+OBJ_B = "eye_closed.obj"
+TEXTURE = "eye_texture.png"
 
 DISPLAY = pi3d.Display.create(
     frames_per_second=60,
@@ -18,8 +18,8 @@ VERT_SHADER = """
 precision mediump float;
 #endif
 
-attribute vec3 vertexA;
-attribute vec3 vertexB;
+attribute vec3 vertex;
+attribute vec3 normal;
 attribute vec2 texcoord;
 
 uniform mat4 modelviewmatrix[2];
@@ -31,7 +31,10 @@ void main(void) {
 
     float morphAmount = unif[16].x;
 
-    vec3 pos = mix(vertexA, vertexB, morphAmount);
+    vec3 positionA = vertex;
+    vec3 positionB = normal;
+
+    vec3 pos = mix(positionA, positionB, morphAmount);
 
     gl_Position = modelviewmatrix[1] * modelviewmatrix[0] * vec4(pos, 1.0);
 
@@ -64,7 +67,13 @@ shader = pi3d.Shader(
 texture = pi3d.Texture(TEXTURE)
 
 modelA = pi3d.Model(
-    file_string=OBJ_A
+    file_string=OBJ_A,
+    x=0,
+    y=0,
+    z=8.0,
+    sx=1.0,
+    sy=1.0,
+    sz=1.0
 )
 
 modelB = pi3d.Model(
@@ -74,8 +83,28 @@ modelB = pi3d.Model(
 print("buffers A:", len(modelA.buf))
 print("buffers B:", len(modelB.buf))
 
-positionA = modelA.buf[0].array_buffer[:, 0:3]
-positionB = modelB.buf[0].array_buffer[:, 0:3]
+if len(modelA.buf) != len(modelB.buf):
+    raise ValueError(
+        "OBJ files must have same number of mesh buffers"
+    )
+
+for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
+
+    print("buffer", i)
+    print("verts A:", len(bufA.array_buffer))
+    print("verts B:", len(bufB.array_buffer))
+
+    if len(bufA.array_buffer) != len(bufB.array_buffer):
+        raise ValueError(
+            "OBJ files must have identical topology"
+        )
+
+    # Store target mesh vertices in normal attribute.
+    # vertex = positionA
+    # normal = positionB
+    positionB = bufB.array_buffer[:, 0:3]
+
+    bufA.re_init(normals=positionB)
 
 modelA.set_shader(shader)
 
