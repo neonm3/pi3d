@@ -10,7 +10,7 @@ DISPLAY = pi3d.Display.create(
 CAMERA = pi3d.Camera()
 shader = pi3d.Shader("uv_light")
 
-texture = pi3d.Texture("model_texture.png")
+texture = pi3d.Texture("eyeTexture")
 
 model = pi3d.Model(
     file_string="eyeOpen.obj",
