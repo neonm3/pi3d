@@ -28,7 +28,6 @@ uniform vec3 unif[20];
 varying vec2 uv;
 
 void main(void) {
-
     float morphAmount = unif[16].x;
 
     vec3 positionA = vertex;
@@ -51,8 +50,8 @@ uniform sampler2D tex0;
 varying vec2 uv;
 
 void main(void) {
-    vec4 col = texture2D(tex0, vec2(uv.x, 1.0 - uv.y));
-    gl_FragColor = col;
+    vec2 fixedUV = vec2(uv.x, 1.0 - uv.y);
+    gl_FragColor = texture2D(tex0, fixedUV);
 }
 """
 
@@ -61,9 +60,7 @@ shader = pi3d.Shader(
     fshader_source=FRAG_SHADER
 )
 
-texture = pi3d.Texture(TEXTURE)
-modelA.set_shader(shader)
-modelA.set_draw_details(shader, [texture])
+texture = pi3d.Texture(TEXTURE, mipmap=False)
 
 modelA = pi3d.Model(
     file_string=OBJ_A,
@@ -79,16 +76,17 @@ modelB = pi3d.Model(
     file_string=OBJ_B
 )
 
+modelA.set_shader(shader)
+modelA.set_draw_details(shader, [texture])
+modelA.set_material((1.0, 1.0, 1.0))
+
 print("buffers A:", len(modelA.buf))
 print("buffers B:", len(modelB.buf))
 
 if len(modelA.buf) != len(modelB.buf):
-    raise ValueError(
-        "OBJ files must have same number of mesh buffers"
-    )
+    raise ValueError("OBJ files must have same number of mesh buffers")
 
 for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
-
     print("buffer", i)
     print("verts A:", len(bufA.array_buffer))
     print("verts B:", len(bufB.array_buffer))
@@ -101,7 +99,9 @@ for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
 
     uv_before = bufA.array_buffer[:, 6:8].copy()
 
-    # overwrite normals directly, do NOT use re_init()
+    # overwrite normal columns directly:
+    # vertex = positionA
+    # normal = positionB
     bufA.array_buffer[:, 3:6] = positionB
 
     uv_after = bufA.array_buffer[:, 6:8].copy()
@@ -110,9 +110,8 @@ for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
     print("UV min:", uv_after.min(axis=0))
     print("UV max:", uv_after.max(axis=0))
 
-    # tell pi3d to upload modified buffer
+    # force GPU upload of modified buffer
     bufA._loaded_opengl = False
-    
 
 keys = pi3d.Keyboard()
 
@@ -123,10 +122,8 @@ scale = 1.0
 morphAmount = 0.0
 
 while DISPLAY.loop_running():
-
     t = time.time() - start_time
 
-    # fake camera orbit using object rotation
     yaw = math.sin(t * 0.45) * 10.0 * motion
     pitch = math.sin(t * 0.31 + 1.2) * 5.0 * motion
     roll = math.sin(t * 0.19 + 0.7) * 1.5 * motion
@@ -134,14 +131,9 @@ while DISPLAY.loop_running():
     modelA.rotateToX(pitch)
     modelA.rotateToY(yaw)
     modelA.rotateToZ(roll)
-
     modelA.scale(scale, scale, scale)
 
-    # unif[16].x
-    modelA.set_custom_data(
-        48,
-        [morphAmount, 0.0, 0.0]
-    )
+    modelA.set_custom_data(48, [morphAmount, 0.0, 0.0])
 
     modelA.draw()
 
@@ -150,7 +142,6 @@ while DISPLAY.loop_running():
     if key == 27:
         break
 
-    # motion
     elif key == ord("a"):
         motion += 0.1
         print("Motion:", round(motion, 2))
@@ -159,7 +150,6 @@ while DISPLAY.loop_running():
         motion = max(0.0, motion - 0.1)
         print("Motion:", round(motion, 2))
 
-    # scale
     elif key == ord("s"):
         scale += 0.05
         print("Scale:", round(scale, 2))
@@ -168,7 +158,6 @@ while DISPLAY.loop_running():
         scale = max(0.05, scale - 0.05)
         print("Scale:", round(scale, 2))
 
-    # morph
     elif key == ord("d"):
         morphAmount = min(1.0, morphAmount + 0.05)
         print("Morph:", round(morphAmount, 2))
