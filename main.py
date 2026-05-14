@@ -93,19 +93,27 @@ for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
     print("buffer", i)
     print("verts A:", len(bufA.array_buffer))
     print("verts B:", len(bufB.array_buffer))
+    print("buffer shape A:", bufA.array_buffer.shape)
 
     if len(bufA.array_buffer) != len(bufB.array_buffer):
-        raise ValueError(
-            "OBJ files must have identical topology"
-        )
+        raise ValueError("OBJ files must have identical topology")
 
-    # Store target mesh vertices in normal attribute.
-    # vertex = positionA
-    # normal = positionB
-    positionB = bufB.array_buffer[:, 0:3]
+    positionB = bufB.array_buffer[:, 0:3].copy()
 
-    bufA.re_init(normals=positionB)
+    uv_before = bufA.array_buffer[:, 6:8].copy()
 
+    # overwrite normals directly, do NOT use re_init()
+    bufA.array_buffer[:, 3:6] = positionB
+
+    uv_after = bufA.array_buffer[:, 6:8].copy()
+
+    print("UV changed:", not (uv_before == uv_after).all())
+    print("UV min:", uv_after.min(axis=0))
+    print("UV max:", uv_after.max(axis=0))
+
+    # tell pi3d to upload modified buffer
+    bufA._loaded_opengl = False
+    
 modelA.set_shader(shader)
 
 modelA.set_draw_details(shader, [texture])
