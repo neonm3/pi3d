@@ -2,9 +2,9 @@ import time
 import math
 import pi3d
 
-OBJ_A = "eye_open.obj"
-OBJ_B = "eye_closed.obj"
-TEXTURE = "eye_texture.png"
+OBJ_A = "eyeOpen.obj"
+OBJ_B = "eyeClosed.obj"
+TEXTURE = "eyeTexture .png"
 
 DISPLAY = pi3d.Display.create(
     frames_per_second=60,
