@@ -18,8 +18,7 @@ precision mediump float;
 attribute vec3 vertex;
 attribute vec3 normal;
 
-uniform mat4 modelviewmatrix;
-uniform mat4 projectionmatrix;
+uniform mat4 modelviewmatrix[2];
 uniform vec3 unif[20];
 
 void main(void) {
@@ -30,7 +29,7 @@ void main(void) {
 
     vec3 pos = mix(positionA, positionB, morphAmount);
 
-    gl_Position = projectionmatrix * modelviewmatrix * vec4(pos, 1.0);
+    gl_Position = modelviewmatrix[1] * modelviewmatrix[0] * vec4(pos, 1.0);
 }
 """
 
@@ -53,7 +52,7 @@ modelA = pi3d.Model(
     file_string=OBJ_A,
     x=0,
     y=0,
-    z=0.0,
+    z=8.0,
     sx=1.0,
     sy=1.0,
     sz=1.0
@@ -62,15 +61,13 @@ modelA = pi3d.Model(
 modelB = pi3d.Model(file_string=OBJ_B)
 
 if len(modelA.buf) != len(modelB.buf):
-    raise ValueError("OBJ files must have same number of mesh buffers")
+    raise ValueError("OBJ files must have the same number of buffers")
 
 for bufA, bufB in zip(modelA.buf, modelB.buf):
     if len(bufA.array_buffer) != len(bufB.array_buffer):
         raise ValueError("OBJ files must have identical vertex count/order")
 
-    # Store target mesh vertex positions into the normal attribute.
-    # vertex = positionA
-    # normal = positionB
+    # GPU-side positionB stored in normal attribute
     positionB = bufB.array_buffer[:, 0:3]
     bufA.re_init(normals=positionB)
 
@@ -95,8 +92,10 @@ while DISPLAY.loop_running():
     modelA.rotateToX(pitch)
     modelA.rotateToY(yaw)
     modelA.rotateToZ(roll)
+
     modelA.scale(scale, scale, scale)
 
+    # unif[16].x
     modelA.set_custom_data(48, [morphAmount, 0.0, 0.0])
 
     modelA.draw()
@@ -108,15 +107,19 @@ while DISPLAY.loop_running():
 
     elif key == ord("a"):
         motion += 0.1
+        print("Motion:", round(motion, 2))
 
     elif key == ord("z"):
         motion = max(0.0, motion - 0.1)
+        print("Motion:", round(motion, 2))
 
     elif key == ord("s"):
         scale += 0.05
+        print("Scale:", round(scale, 2))
 
     elif key == ord("x"):
         scale = max(0.05, scale - 0.05)
+        print("Scale:", round(scale, 2))
 
     elif key == ord("d"):
         morphAmount = min(1.0, morphAmount + 0.05)
