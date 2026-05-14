@@ -3,7 +3,7 @@ import math
 import pi3d
 
 OBJ_A = "eyeOpen.obj"
-OBJ_B = "eyeClosed.obj"
+OBJ_B = "eyeOpen.obj"
 TEXTURE = "eyeTexture .png"
 
 DISPLAY = pi3d.Display.create(
