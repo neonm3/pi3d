@@ -67,13 +67,12 @@ def save_current_config():
 # --------------------------------------------------
 # DISPLAY
 # --------------------------------------------------
-os.system("unclutter -idle 0 &")
 
 DISPLAY = pi3d.Display.create(
     frames_per_second=60,
     background=(0.0, 0.0, 0.0, 1.0)
 )
-
+os.system("unclutter -idle 0 &")
 DISPLAY.mouse = False
 
 CAMERA = pi3d.Camera()
