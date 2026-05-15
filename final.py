@@ -1,19 +1,72 @@
 import time
 import math
+import json
 import serial
 import pi3d
 import os
 
-OBJ_A = "eyeOpen.obj"
-OBJ_B = "eyeClosed.obj"
-TEXTURE = "eyeTexture.png"
+CONFIG_FILE = "config.json"
 
 SERIAL_PORT = "/dev/ttyUSB0"
 BAUDRATE = 115200
 
-SENSOR_MIN = 15.0
-SENSOR_MAX = 100.0
-SMOOTHING = 0.08  # lower = smoother/slower, higher = faster
+# --------------------------------------------------
+# LOAD CONFIG
+# --------------------------------------------------
+
+with open(CONFIG_FILE, "r") as f:
+    config_data = json.load(f)
+
+main_id = config_data["main"]
+config = config_data["configs"][main_id]
+
+OBJ_A = config["modelA"]
+OBJ_B = config["modelB"]
+TEXTURE = config["texture"]
+
+pos_x = config["x"]
+pos_y = config["y"]
+pos_z = config["z"]
+
+scale_x = config["sx"]
+scale_y = config["sy"]
+scale_z = config["sz"]
+
+motion = config["motion"]
+
+SENSOR_MIN = config["sensorMin"]
+SENSOR_MAX = config["sensorMax"]
+SMOOTHING = config["smoothing"]
+
+# --------------------------------------------------
+# SAVE CONFIG
+# --------------------------------------------------
+
+def save_current_config():
+    current_config = config_data["configs"][main_id]
+
+    current_config["x"] = pos_x
+    current_config["y"] = pos_y
+    current_config["z"] = pos_z
+
+    current_config["sx"] = scale_x
+    current_config["sy"] = scale_y
+    current_config["sz"] = scale_z
+
+    current_config["motion"] = motion
+
+    current_config["sensorMin"] = SENSOR_MIN
+    current_config["sensorMax"] = SENSOR_MAX
+    current_config["smoothing"] = SMOOTHING
+
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config_data, f, indent=4)
+
+    print("Saved selected config:", main_id)
+
+# --------------------------------------------------
+# DISPLAY
+# --------------------------------------------------
 
 DISPLAY = pi3d.Display.create(
     frames_per_second=60,
@@ -22,12 +75,13 @@ DISPLAY = pi3d.Display.create(
 
 DISPLAY.mouse = False
 
-pi3d.Mouse(restrict=False).stop()
-
 os.system("unclutter -idle 0 &")
 
-
 CAMERA = pi3d.Camera()
+
+# --------------------------------------------------
+# SHADERS
+# --------------------------------------------------
 
 VERT_SHADER = """
 #ifdef GL_ES
@@ -70,6 +124,15 @@ void main(void) {
 }
 """
 
+shader = pi3d.Shader(
+    vshader_source=VERT_SHADER,
+    fshader_source=FRAG_SHADER
+)
+
+# --------------------------------------------------
+# HELPERS
+# --------------------------------------------------
+
 def clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
@@ -77,21 +140,20 @@ def remap_sensor(v):
     v = clamp(v, SENSOR_MIN, SENSOR_MAX)
     return (v - SENSOR_MIN) / (SENSOR_MAX - SENSOR_MIN)
 
-shader = pi3d.Shader(
-    vshader_source=VERT_SHADER,
-    fshader_source=FRAG_SHADER
-)
+# --------------------------------------------------
+# TEXTURE / MODELS
+# --------------------------------------------------
 
 texture = pi3d.Texture(TEXTURE, mipmap=False)
 
 modelA = pi3d.Model(
     file_string=OBJ_A,
-    x=0,
-    y=0,
-    z=5.0,
-    sx=1.0,
-    sy=1.0,
-    sz=1.0
+    x=pos_x,
+    y=pos_y,
+    z=pos_z,
+    sx=scale_x,
+    sy=scale_y,
+    sz=scale_z
 )
 
 modelB = pi3d.Model(file_string=OBJ_B)
@@ -100,56 +162,75 @@ modelA.set_shader(shader)
 modelA.set_draw_details(shader, [texture])
 modelA.set_material((1.0, 1.0, 1.0))
 
+print("Using config:", main_id)
+print("modelA:", OBJ_A)
+print("modelB:", OBJ_B)
+print("texture:", TEXTURE)
+
 print("buffers A:", len(modelA.buf))
 print("buffers B:", len(modelB.buf))
 
 if len(modelA.buf) != len(modelB.buf):
     raise ValueError("OBJ files must have same number of mesh buffers")
 
+# --------------------------------------------------
+# COPY MODEL B POSITIONS INTO NORMAL COLUMNS
+# --------------------------------------------------
+
 for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
     print("buffer", i)
     print("verts A:", len(bufA.array_buffer))
     print("verts B:", len(bufB.array_buffer))
-    print("buffer shape A:", bufA.array_buffer.shape)
 
     if len(bufA.array_buffer) != len(bufB.array_buffer):
         raise ValueError("OBJ files must have identical topology")
 
     positionB = bufB.array_buffer[:, 0:3].copy()
 
-    uv_before = bufA.array_buffer[:, 6:8].copy()
-
-    # Store closed-eye vertex positions inside normal columns.
-    # vertex = open-eye position
-    # normal = closed-eye position
+    # vertex = model A position
+    # normal = model B position / morph target
     bufA.array_buffer[:, 3:6] = positionB
 
-    uv_after = bufA.array_buffer[:, 6:8].copy()
-
-    print("UV changed:", not (uv_before == uv_after).all())
-    print("UV min:", uv_after.min(axis=0))
-    print("UV max:", uv_after.max(axis=0))
-
+    # force GPU upload
     bufA._loaded_opengl = False
+
+# --------------------------------------------------
+# INPUT
+# --------------------------------------------------
 
 keys = pi3d.Keyboard()
 
-ser = serial.Serial(SERIAL_PORT, baudrate=BAUDRATE, timeout=0)
+ser = serial.Serial(
+    SERIAL_PORT,
+    baudrate=BAUDRATE,
+    timeout=0
+)
+
 serial_buffer = ""
+
+# --------------------------------------------------
+# STATE
+# --------------------------------------------------
 
 start_time = time.time()
 
-motion = 1.0
-scale = 1.0
+global_scale = 1.0
 
-inputSensorValue = 0.0  # target morph value, 0–1
-morphAmount = 0.0       # smoothed current morph value, 0–1
+inputSensorValue = 0.0
+morphAmount = 0.0
+
+# --------------------------------------------------
+# MAIN LOOP
+# --------------------------------------------------
 
 try:
     while DISPLAY.loop_running():
         t = time.time() - start_time
 
-        # Read serial without blocking
+        # ------------------------------------------
+        # SERIAL INPUT
+        # ------------------------------------------
+
         data = ser.read(128).decode("utf-8", errors="ignore")
 
         if data:
@@ -163,44 +244,128 @@ try:
                     try:
                         raw_value = float(line)
 
-                        # Accept only expected sensor range 0–200
                         if 0.0 <= raw_value <= 200.0:
                             inputSensorValue = remap_sensor(raw_value)
 
                     except ValueError:
                         pass
 
-        # Smoothly blend current morph toward sensor target
+        # ------------------------------------------
+        # SMOOTH SENSOR MORPH
+        # ------------------------------------------
+
         morphAmount += (inputSensorValue - morphAmount) * SMOOTHING
+
+        # ------------------------------------------
+        # MOTION
+        # ------------------------------------------
 
         yaw = math.sin(t * 0.45) * 10.0 * motion
         pitch = math.sin(t * 0.31 + 1.2) * 5.0 * motion
         roll = math.sin(t * 0.19 + 0.7) * 1.5 * motion
 
+        modelA.position(pos_x, pos_y, pos_z)
+
         modelA.rotateToX(pitch)
         modelA.rotateToY(yaw)
         modelA.rotateToZ(roll)
-        modelA.scale(scale, scale, scale)
 
-        modelA.set_custom_data(48, [morphAmount, 0.0, 0.0])
+        modelA.scale(
+            scale_x * global_scale,
+            scale_y * global_scale,
+            scale_z * global_scale
+        )
+
+        modelA.set_custom_data(
+            48,
+            [morphAmount, 0.0, 0.0]
+        )
+
         modelA.draw()
+
+        # ------------------------------------------
+        # KEYBOARD
+        # ------------------------------------------
 
         key = keys.read()
 
         if key == 27:
             break
 
+        # save selected config back into config.json
+        elif key == 10 or key == 13:
+            save_current_config()
+
+        # motion
         elif key == ord("a"):
             motion += 0.1
 
         elif key == ord("z"):
             motion = max(0.0, motion - 0.1)
 
+        # global temporary scale, not saved
         elif key == ord("s"):
-            scale += 0.05
+            global_scale += 0.05
 
         elif key == ord("x"):
-            scale = max(0.05, scale - 0.05)
+            global_scale = max(0.05, global_scale - 0.05)
+
+        # position
+        elif key == ord("j"):
+            pos_x -= 0.1
+
+        elif key == ord("l"):
+            pos_x += 0.1
+
+        elif key == ord("i"):
+            pos_y += 0.1
+
+        elif key == ord("k"):
+            pos_y -= 0.1
+
+        elif key == ord("u"):
+            pos_z += 0.1
+
+        elif key == ord("o"):
+            pos_z -= 0.1
+
+        # actual saved model scale
+        elif key == ord("1"):
+            scale_x -= 0.05
+
+        elif key == ord("2"):
+            scale_x += 0.05
+
+        elif key == ord("3"):
+            scale_y -= 0.05
+
+        elif key == ord("4"):
+            scale_y += 0.05
+
+        elif key == ord("5"):
+            scale_z -= 0.05
+
+        elif key == ord("6"):
+            scale_z += 0.05
+
+        # sensor calibration
+        elif key == ord("q"):
+            SENSOR_MIN -= 1.0
+
+        elif key == ord("w"):
+            SENSOR_MIN += 1.0
+
+        elif key == ord("e"):
+            SENSOR_MAX -= 1.0
+
+        elif key == ord("r"):
+            SENSOR_MAX += 1.0
+
+        elif key == ord("t"):
+            SMOOTHING = max(0.001, SMOOTHING - 0.01)
+
+        elif key == ord("y"):
+            SMOOTHING = min(1.0, SMOOTHING + 0.01)
 
 finally:
     ser.close()
