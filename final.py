@@ -1,0 +1,200 @@
+import time
+import math
+import serial
+import pi3d
+
+OBJ_A = "eyeOpen.obj"
+OBJ_B = "eyeClosed.obj"
+TEXTURE = "eyeTexture.png"
+
+SERIAL_PORT = "/dev/ttyUSB0"
+BAUDRATE = 115200
+
+SENSOR_MIN = 15.0
+SENSOR_MAX = 100.0
+SMOOTHING = 0.08  # lower = smoother/slower, higher = faster
+
+DISPLAY = pi3d.Display.create(
+    frames_per_second=60,
+    background=(0.0, 0.0, 0.0, 1.0)
+)
+
+CAMERA = pi3d.Camera()
+
+VERT_SHADER = """
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+attribute vec3 vertex;
+attribute vec3 normal;
+attribute vec2 texcoord;
+
+uniform mat4 modelviewmatrix[2];
+uniform vec3 unif[20];
+
+varying vec2 uv;
+
+void main(void) {
+    float morphAmount = unif[16].x;
+
+    vec3 positionA = vertex;
+    vec3 positionB = normal;
+
+    vec3 pos = mix(positionA, positionB, morphAmount);
+
+    gl_Position = modelviewmatrix[1] * modelviewmatrix[0] * vec4(pos, 1.0);
+
+    uv = texcoord;
+}
+"""
+
+FRAG_SHADER = """
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform sampler2D tex0;
+varying vec2 uv;
+
+void main(void) {
+    gl_FragColor = texture2D(tex0, uv);
+}
+"""
+
+def clamp(v, lo, hi):
+    return max(lo, min(hi, v))
+
+def remap_sensor(v):
+    v = clamp(v, SENSOR_MIN, SENSOR_MAX)
+    return (v - SENSOR_MIN) / (SENSOR_MAX - SENSOR_MIN)
+
+shader = pi3d.Shader(
+    vshader_source=VERT_SHADER,
+    fshader_source=FRAG_SHADER
+)
+
+texture = pi3d.Texture(TEXTURE, mipmap=False)
+
+modelA = pi3d.Model(
+    file_string=OBJ_A,
+    x=0,
+    y=0,
+    z=5.0,
+    sx=1.0,
+    sy=1.0,
+    sz=1.0
+)
+
+modelB = pi3d.Model(file_string=OBJ_B)
+
+modelA.set_shader(shader)
+modelA.set_draw_details(shader, [texture])
+modelA.set_material((1.0, 1.0, 1.0))
+
+print("buffers A:", len(modelA.buf))
+print("buffers B:", len(modelB.buf))
+
+if len(modelA.buf) != len(modelB.buf):
+    raise ValueError("OBJ files must have same number of mesh buffers")
+
+for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
+    print("buffer", i)
+    print("verts A:", len(bufA.array_buffer))
+    print("verts B:", len(bufB.array_buffer))
+    print("buffer shape A:", bufA.array_buffer.shape)
+
+    if len(bufA.array_buffer) != len(bufB.array_buffer):
+        raise ValueError("OBJ files must have identical topology")
+
+    positionB = bufB.array_buffer[:, 0:3].copy()
+
+    uv_before = bufA.array_buffer[:, 6:8].copy()
+
+    # Store closed-eye vertex positions inside normal columns.
+    # vertex = open-eye position
+    # normal = closed-eye position
+    bufA.array_buffer[:, 3:6] = positionB
+
+    uv_after = bufA.array_buffer[:, 6:8].copy()
+
+    print("UV changed:", not (uv_before == uv_after).all())
+    print("UV min:", uv_after.min(axis=0))
+    print("UV max:", uv_after.max(axis=0))
+
+    bufA._loaded_opengl = False
+
+keys = pi3d.Keyboard()
+
+ser = serial.Serial(SERIAL_PORT, baudrate=BAUDRATE, timeout=0)
+serial_buffer = ""
+
+start_time = time.time()
+
+motion = 1.0
+scale = 1.0
+
+inputSensorValue = 0.0  # target morph value, 0–1
+morphAmount = 0.0       # smoothed current morph value, 0–1
+
+try:
+    while DISPLAY.loop_running():
+        t = time.time() - start_time
+
+        # Read serial without blocking
+        data = ser.read(128).decode("utf-8", errors="ignore")
+
+        if data:
+            serial_buffer += data
+
+            while "\n" in serial_buffer:
+                line, serial_buffer = serial_buffer.split("\n", 1)
+                line = line.strip()
+
+                if line:
+                    try:
+                        raw_value = float(line)
+
+                        # Accept only expected sensor range 0–200
+                        if 0.0 <= raw_value <= 200.0:
+                            inputSensorValue = remap_sensor(raw_value)
+
+                    except ValueError:
+                        pass
+
+        # Smoothly blend current morph toward sensor target
+        morphAmount += (inputSensorValue - morphAmount) * SMOOTHING
+
+        yaw = math.sin(t * 0.45) * 10.0 * motion
+        pitch = math.sin(t * 0.31 + 1.2) * 5.0 * motion
+        roll = math.sin(t * 0.19 + 0.7) * 1.5 * motion
+
+        modelA.rotateToX(pitch)
+        modelA.rotateToY(yaw)
+        modelA.rotateToZ(roll)
+        modelA.scale(scale, scale, scale)
+
+        modelA.set_custom_data(48, [morphAmount, 0.0, 0.0])
+        modelA.draw()
+
+        key = keys.read()
+
+        if key == 27:
+            break
+
+        elif key == ord("a"):
+            motion += 0.1
+
+        elif key == ord("z"):
+            motion = max(0.0, motion - 0.1)
+
+        elif key == ord("s"):
+            scale += 0.05
+
+        elif key == ord("x"):
+            scale = max(0.05, scale - 0.05)
+
+finally:
+    ser.close()
+    keys.close()
+    DISPLAY.destroy()
