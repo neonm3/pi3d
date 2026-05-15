@@ -74,6 +74,7 @@ DISPLAY = pi3d.Display.create(
 )
 
 DISPLAY.mouse = False
+DISPLAY.clear = False
 
 os.system("unclutter -idle 0 &")
 
