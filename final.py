@@ -21,6 +21,8 @@ DISPLAY = pi3d.Display.create(
 
 DISPLAY.mouse = False
 
+pi3d.Mouse(restrict=False).stop()
+
 CAMERA = pi3d.Camera()
 
 VERT_SHADER = """
