@@ -222,7 +222,7 @@ morphAmount = 0.0
 # --------------------------------------------------
 
 try:
-    while DISPLAY.is_running:
+    while DISPLAY.loop_running():
         t = time.time() - start_time
 
         # ------------------------------------------
