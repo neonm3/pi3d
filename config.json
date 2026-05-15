@@ -1,0 +1,85 @@
+{
+  "main": 0,
+
+  "configs": [
+    {
+      "modelA": "eyeOpen.obj",
+      "modelB": "eyeClosed.obj",
+      "texture": "eyeTexture.png",
+
+      "x": 0.0,
+      "y": 0.0,
+      "z": 5.0,
+
+      "sx": 1.0,
+      "sy": 1.0,
+      "sz": 1.0,
+
+      "motion": 1.0,
+
+      "sensorMin": 15.0,
+      "sensorMax": 100.0,
+      "smoothing": 0.08
+    },
+
+    {
+      "modelA": "eye2Open.obj",
+      "modelB": "eye2Closed.obj",
+      "texture": "eye2Texture.png",
+
+      "x": 0.0,
+      "y": -0.5,
+      "z": 6.0,
+
+      "sx": 1.2,
+      "sy": 1.2,
+      "sz": 1.2,
+
+      "motion": 0.5,
+
+      "sensorMin": 20.0,
+      "sensorMax": 120.0,
+      "smoothing": 0.04
+    },
+
+    {
+      "modelA": "maskOpen.obj",
+      "modelB": "maskClosed.obj",
+      "texture": "maskTexture.png",
+
+      "x": 1.0,
+      "y": 0.0,
+      "z": 7.0,
+
+      "sx": 0.8,
+      "sy": 0.8,
+      "sz": 0.8,
+
+      "motion": 2.0,
+
+      "sensorMin": 10.0,
+      "sensorMax": 80.0,
+      "smoothing": 0.12
+    },
+
+    {
+      "modelA": "branchOpen.obj",
+      "modelB": "branchClosed.obj",
+      "texture": "branchTexture.png",
+
+      "x": -1.0,
+      "y": 0.5,
+      "z": 4.5,
+
+      "sx": 1.5,
+      "sy": 1.5,
+      "sz": 1.5,
+
+      "motion": 0.2,
+
+      "sensorMin": 30.0,
+      "sensorMax": 140.0,
+      "smoothing": 0.02
+    }
+  ]
+}
