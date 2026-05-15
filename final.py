@@ -67,6 +67,7 @@ def save_current_config():
 # --------------------------------------------------
 # DISPLAY
 # --------------------------------------------------
+os.system("unclutter -idle 0 &")
 
 DISPLAY = pi3d.Display.create(
     frames_per_second=60,
@@ -74,9 +75,6 @@ DISPLAY = pi3d.Display.create(
 )
 
 DISPLAY.mouse = False
-DISPLAY.clear = False
-
-os.system("unclutter -idle 0 &")
 
 CAMERA = pi3d.Camera()
 
@@ -225,7 +223,7 @@ morphAmount = 0.0
 # --------------------------------------------------
 
 try:
-    while DISPLAY.loop_running():
+    while DISPLAY.is_running:
         t = time.time() - start_time
 
         # ------------------------------------------
