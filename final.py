@@ -2,6 +2,7 @@ import time
 import math
 import serial
 import pi3d
+import os
 
 OBJ_A = "eyeOpen.obj"
 OBJ_B = "eyeClosed.obj"
@@ -22,6 +23,9 @@ DISPLAY = pi3d.Display.create(
 DISPLAY.mouse = False
 
 pi3d.Mouse(restrict=False).stop()
+
+os.system("unclutter -idle 0 &")
+
 
 CAMERA = pi3d.Camera()
 
