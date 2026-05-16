@@ -334,9 +334,10 @@ try:
         if cycle_seconds > 0:
             now = time.time()
 
-            if now - last_cycle_time >= cycle_seconds:
-                load_next_config(auto=True)
-                last_cycle_time = now
+			if inputSensorValue<SENSOR_MIN:
+				if now - last_cycle_time >= cycle_seconds:
+					load_next_config(auto=True)
+                	last_cycle_time = now
 
         # ------------------------------------------
         # KEYBOARD
