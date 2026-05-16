@@ -1,241 +1,416 @@
-import os
-import json
 import time
 import math
+import json
 import serial
 import pi3d
+import os
 
 CONFIG_FILE = "config.json"
-
-DEFAULT_CONFIG = {
-    "main": 0,
-    "cycle": 10,
-    "configs": [
-        {
-            "modelA": "eyeOpen.obj",
-            "modelB": "eyeClosed.obj",
-            "texture": "eyeTexture.png",
-            "sx": 1.0,
-            "sy": 1.0,
-            "sz": 1.0,
-            "x": 0.0,
-            "y": 0.0,
-            "z": 4.0,
-            "motion": 0.0,
-            "SENSOR_MIN": 15.0,
-            "SENSOR_MAX": 100.0,
-            "SMOOTHING": 0.08
-        }
-    ]
-}
+SERIAL_PORT = "/dev/ttyUSB0"
+BAUDRATE = 115200
 
 
-def load_config():
-    if not os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "w") as f:
-            json.dump(DEFAULT_CONFIG, f, indent=4)
-        return DEFAULT_CONFIG
+# --------------------------------------------------
+# LOAD / SAVE CONFIG
+# --------------------------------------------------
 
+def load_config_file():
     with open(CONFIG_FILE, "r") as f:
         return json.load(f)
 
 
-def save_config(config_data):
+config_data = load_config_file()
+main_id = config_data["main"]
+config = config_data["configs"][main_id]
+
+cycle_seconds = config_data.get("cycle", 0)
+last_cycle_time = time.time()
+
+
+def apply_config(new_main_id):
+    global cycle_seconds
+    global main_id, config
+    global OBJ_A, OBJ_B, TEXTURE
+    global pos_x, pos_y, pos_z
+    global scale_x, scale_y, scale_z
+    global motion
+    global SENSOR_MIN, SENSOR_MAX, SMOOTHING
+    global texture, modelA, modelB
+    global inputSensorValue, morphAmount
+
+    main_id = new_main_id
+    config_data["main"] = main_id
+    config = config_data["configs"][main_id]
+    cycle_seconds = config_data.get("cycle", 0)
+
+    OBJ_A = config["modelA"]
+    OBJ_B = config["modelB"]
+    TEXTURE = config["texture"]
+
+    pos_x = config["x"]
+    pos_y = config["y"]
+    pos_z = config["z"]
+
+    scale_x = config["sx"]
+    scale_y = config["sy"]
+    scale_z = config["sz"]
+
+    motion = config["motion"]
+
+    SENSOR_MIN = config["sensorMin"]
+    SENSOR_MAX = config["sensorMax"]
+    SMOOTHING = config["smoothing"]
+
+    texture = pi3d.Texture(TEXTURE, mipmap=False)
+
+    modelA = pi3d.Model(
+        file_string=OBJ_A,
+        x=pos_x,
+        y=pos_y,
+        z=pos_z,
+        sx=scale_x,
+        sy=scale_y,
+        sz=scale_z
+    )
+
+    modelB = pi3d.Model(file_string=OBJ_B)
+
+    modelA.set_shader(shader)
+    modelA.set_draw_details(shader, [texture])
+    modelA.set_material((1.0, 1.0, 1.0))
+
+    print("")
+    print("Using config:", main_id)
+    print("modelA:", OBJ_A)
+    print("modelB:", OBJ_B)
+    print("texture:", TEXTURE)
+    print("buffers A:", len(modelA.buf))
+    print("buffers B:", len(modelB.buf))
+
+    if len(modelA.buf) != len(modelB.buf):
+        raise ValueError("OBJ files must have same number of mesh buffers")
+
+    for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
+        print("buffer", i)
+        print("verts A:", len(bufA.array_buffer))
+        print("verts B:", len(bufB.array_buffer))
+
+        if len(bufA.array_buffer) != len(bufB.array_buffer):
+            raise ValueError("OBJ files must have identical topology")
+
+        positionB = bufB.array_buffer[:, 0:3].copy()
+        bufA.array_buffer[:, 3:6] = positionB
+        bufA._loaded_opengl = False
+
+    inputSensorValue = 0.0
+    morphAmount = 0.0
+
+
+def save_current_config():
+    current_config = config_data["configs"][main_id]
+
+    current_config["x"] = pos_x
+    current_config["y"] = pos_y
+    current_config["z"] = pos_z
+
+    current_config["sx"] = scale_x
+    current_config["sy"] = scale_y
+    current_config["sz"] = scale_z
+
+    current_config["motion"] = motion
+
+    current_config["sensorMin"] = SENSOR_MIN
+    current_config["sensorMax"] = SENSOR_MAX
+    current_config["smoothing"] = SMOOTHING
+
+    config_data["main"] = main_id
+
     with open(CONFIG_FILE, "w") as f:
         json.dump(config_data, f, indent=4)
 
+    print("Saved selected config:", main_id)
 
-config_data = load_config()
-main_id = config_data.get("main", 0)
-configs = config_data["configs"]
-cfg = configs[main_id]
 
-SENSOR_MIN = float(cfg.get("SENSOR_MIN", 15.0))
-SENSOR_MAX = float(cfg.get("SENSOR_MAX", 100.0))
-SMOOTHING = float(cfg.get("SMOOTHING", 0.08))
+def load_next_config(auto=False):
+    if not auto:
+        save_current_config()
 
-BLEND_TIME = 1.0
-HOLD_TIME = 5.0
+    total = len(config_data["configs"])
+    next_id = (main_id + 1) % total
 
-sensor_value = SENSOR_MAX
-smoothed_sensor = SENSOR_MAX
+    config_data["main"] = next_id
 
-morphAmount = 0.0
-anim_state = "idle"
-anim_start_time = 0.0
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config_data, f, indent=4)
 
+    apply_config(next_id)
+
+    print("Switched to config:", next_id)
+
+
+# --------------------------------------------------
+# DISPLAY
+# --------------------------------------------------
 
 DISPLAY = pi3d.Display.create(
     frames_per_second=60,
     background=(0.0, 0.0, 0.0, 1.0)
 )
 
+os.system("unclutter -idle 0 &")
+DISPLAY.mouse = False
+
 CAMERA = pi3d.Camera()
-KEYBOARD = pi3d.Keyboard()
 
-shader = pi3d.Shader("uv_flat")
 
-tex = pi3d.Texture(cfg["texture"])
+# --------------------------------------------------
+# SHADERS
+# --------------------------------------------------
 
-modelA = pi3d.Model(
-    file_string=cfg["modelA"],
-    name="modelA",
-    x=cfg["x"],
-    y=cfg["y"],
-    z=cfg["z"],
-    sx=cfg["sx"],
-    sy=cfg["sy"],
-    sz=cfg["sz"]
+VERT_SHADER = """
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+attribute vec3 vertex;
+attribute vec3 normal;
+attribute vec2 texcoord;
+
+uniform mat4 modelviewmatrix[2];
+uniform vec3 unif[20];
+
+varying vec2 uv;
+
+void main(void) {
+    float morphAmount = unif[16].x;
+
+    vec3 positionA = vertex;
+    vec3 positionB = normal;
+
+    vec3 pos = mix(positionA, positionB, morphAmount);
+
+    gl_Position = modelviewmatrix[1] * modelviewmatrix[0] * vec4(pos, 1.0);
+    uv = texcoord;
+}
+"""
+
+FRAG_SHADER = """
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform sampler2D tex0;
+varying vec2 uv;
+
+void main(void) {
+    gl_FragColor = texture2D(tex0, uv);
+}
+"""
+
+shader = pi3d.Shader(
+    vshader_source=VERT_SHADER,
+    fshader_source=FRAG_SHADER
 )
 
-modelB = pi3d.Model(
-    file_string=cfg["modelB"],
-    name="modelB",
-    x=cfg["x"],
-    y=cfg["y"],
-    z=cfg["z"],
-    sx=cfg["sx"],
-    sy=cfg["sy"],
-    sz=cfg["sz"]
+
+# --------------------------------------------------
+# HELPERS
+# --------------------------------------------------
+
+def clamp(v, lo, hi):
+    return max(lo, min(hi, v))
+
+
+def remap_sensor(v):
+    v = clamp(v, SENSOR_MIN, SENSOR_MAX)
+    return (v - SENSOR_MIN) / (SENSOR_MAX - SENSOR_MIN)
+
+
+# --------------------------------------------------
+# INITIAL MODEL LOAD
+# --------------------------------------------------
+
+texture = None
+modelA = None
+modelB = None
+
+inputSensorValue = 0.0
+morphAmount = 0.0
+
+apply_config(main_id)
+
+
+# --------------------------------------------------
+# INPUT
+# --------------------------------------------------
+
+keys = pi3d.Keyboard()
+
+ser = serial.Serial(
+    SERIAL_PORT,
+    baudrate=BAUDRATE,
+    timeout=0
 )
 
-modelA.set_draw_details(shader, [tex])
-modelB.set_draw_details(shader, [tex])
+serial_buffer = ""
+
+
+# --------------------------------------------------
+# STATE
+# --------------------------------------------------
+
+start_time = time.time()
+global_scale = 1.0
+
+
+# --------------------------------------------------
+# MAIN LOOP
+# --------------------------------------------------
 
 try:
-    ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=0.01)
-except Exception as e:
-    print("Serial not available:", e)
-    ser = None
+    while DISPLAY.loop_running():
+        t = time.time() - start_time
 
+        # ------------------------------------------
+        # SERIAL INPUT
+        # ------------------------------------------
 
-def read_sensor():
-    global sensor_value
+        data = ser.read(128).decode("utf-8", errors="ignore")
 
-    if ser is None:
-        return sensor_value
+        if data:
+            serial_buffer += data
 
-    try:
-        line = ser.readline().decode("utf-8").strip()
-        if line:
-            sensor_value = float(line)
-    except Exception:
-        pass
+            while "\n" in serial_buffer:
+                line, serial_buffer = serial_buffer.split("\n", 1)
+                line = line.strip()
 
-    return sensor_value
+                if line:
+                    try:
+                        raw_value = float(line)
 
+                        if 0.0 <= raw_value <= 200.0:
+                            inputSensorValue = remap_sensor(raw_value)
 
-def update_animation(sensor):
-    global morphAmount
-    global anim_state
-    global anim_start_time
+                    except ValueError:
+                        pass
 
-    now = time.time()
+        # ------------------------------------------
+        # SMOOTH SENSOR MORPH
+        # ------------------------------------------
 
-    if anim_state == "idle":
-        morphAmount = 0.0
+        morphAmount += (inputSensorValue - morphAmount) * SMOOTHING
 
-        if sensor < SENSOR_MIN:
-            anim_state = "blend_to_closed"
-            anim_start_time = now
+        # ------------------------------------------
+        # MOTION
+        # ------------------------------------------
 
-    elif anim_state == "blend_to_closed":
-        t = min((now - anim_start_time) / BLEND_TIME, 1.0)
-        morphAmount = t
+        yaw = math.sin(t * 0.45) * 10.0 * motion
+        pitch = math.sin(t * 0.31 + 1.2) * 5.0 * motion
+        roll = math.sin(t * 0.19 + 0.7) * 1.5 * motion
 
-        if t >= 1.0:
-            morphAmount = 1.0
-            anim_state = "hold_closed"
-            anim_start_time = now
+        modelA.position(pos_x, pos_y, pos_z)
 
-    elif anim_state == "hold_closed":
-        morphAmount = 1.0
+        modelA.rotateToX(pitch)
+        modelA.rotateToY(yaw)
+        modelA.rotateToZ(roll)
 
-        if now - anim_start_time >= HOLD_TIME:
-            anim_state = "blend_to_open"
-            anim_start_time = now
+        modelA.scale(
+            scale_x * global_scale,
+            scale_y * global_scale,
+            scale_z * global_scale
+        )
 
-    elif anim_state == "blend_to_open":
-        t = min((now - anim_start_time) / BLEND_TIME, 1.0)
-        morphAmount = 1.0 - t
+        modelA.set_custom_data(
+            48,
+            [morphAmount, 0.0, 0.0]
+        )
 
-        if t >= 1.0:
-            morphAmount = 0.0
-            anim_state = "idle"
+        modelA.draw()
+        
+        # ------------------------------------------
+        # AUTO CONFIG CYCLING
+        # ------------------------------------------
 
+        if cycle_seconds > 0:
+            now = time.time()
 
-def apply_transform():
-    modelA.position(cfg["x"], cfg["y"], cfg["z"])
-    modelB.position(cfg["x"], cfg["y"], cfg["z"])
+            if now - last_cycle_time >= cycle_seconds:
+                load_next_config(auto=True)
+                last_cycle_time = now
 
-    modelA.scale(cfg["sx"], cfg["sy"], cfg["sz"])
-    modelB.scale(cfg["sx"], cfg["sy"], cfg["sz"])
+        # ------------------------------------------
+        # KEYBOARD
+        # ------------------------------------------
 
+        key = keys.read()
 
-while DISPLAY.loop_running():
-    raw_sensor = read_sensor()
+        if key == 27:
+            break
 
-    smoothed_sensor += (raw_sensor - smoothed_sensor) * SMOOTHING
+        # ENTER saves selected config
+        elif key == 10 or key == 13:
+            save_current_config()
 
-    update_animation(smoothed_sensor)
+        # SPACE saves current config and loads next main config
+        elif key == 32:
+            load_next_config()
+            last_cycle_time = time.time()
 
-    apply_transform()
+        # motion
+        elif key == ord("a"):
+            motion += 0.1
+        elif key == ord("z"):
+            motion = max(0.0, motion - 0.1)
 
-    motion = float(cfg.get("motion", 0.0))
-    if motion != 0.0:
-        rot = time.time() * motion
-        modelA.rotateToY(rot)
-        modelB.rotateToY(rot)
+        # global temporary scale, not saved
+        elif key == ord("s"):
+            global_scale += 0.05
+        elif key == ord("x"):
+            global_scale = max(0.05, global_scale - 0.05)
 
-    # Draw both models.
-    # modelA fades out as modelB fades in.
-    modelA.set_alpha(1.0 - morphAmount)
-    modelB.set_alpha(morphAmount)
+        # position
+        elif key == ord("j"):
+            pos_x -= 0.1
+        elif key == ord("l"):
+            pos_x += 0.1
+        elif key == ord("i"):
+            pos_y += 0.1
+        elif key == ord("k"):
+            pos_y -= 0.1
+        elif key == ord("u"):
+            pos_z += 0.1
+        elif key == ord("o"):
+            pos_z -= 0.1
 
-    modelA.draw()
-    modelB.draw()
+        # actual saved model scale
+        elif key == ord("1"):
+            scale_x -= 0.05
+        elif key == ord("2"):
+            scale_x += 0.05
+        elif key == ord("3"):
+            scale_y -= 0.05
+        elif key == ord("4"):
+            scale_y += 0.05
+        elif key == ord("5"):
+            scale_z -= 0.05
+        elif key == ord("6"):
+            scale_z += 0.05
 
-    key = KEYBOARD.read()
+        # sensor calibration
+        elif key == ord("q"):
+            SENSOR_MIN -= 1.0
+        elif key == ord("w"):
+            SENSOR_MIN += 1.0
+        elif key == ord("e"):
+            SENSOR_MAX -= 1.0
+        elif key == ord("r"):
+            SENSOR_MAX += 1.0
+        elif key == ord("t"):
+            SMOOTHING = max(0.001, SMOOTHING - 0.01)
+        elif key == ord("y"):
+            SMOOTHING = min(1.0, SMOOTHING + 0.01)
 
-    if key == 27:  # ESC
-        break
-
-    elif key == 10 or key == 13:  # ENTER
-        configs[main_id] = cfg
-        config_data["main"] = main_id
-        save_config(config_data)
-        print("Config saved")
-
-    elif key == ord("w"):
-        cfg["y"] += 0.05
-    elif key == ord("s"):
-        cfg["y"] -= 0.05
-    elif key == ord("a"):
-        cfg["x"] -= 0.05
-    elif key == ord("d"):
-        cfg["x"] += 0.05
-    elif key == ord("q"):
-        cfg["z"] += 0.05
-    elif key == ord("e"):
-        cfg["z"] -= 0.05
-
-    elif key == ord("+") or key == ord("="):
-        cfg["sx"] += 0.05
-        cfg["sy"] += 0.05
-        cfg["sz"] += 0.05
-
-    elif key == ord("-"):
-        cfg["sx"] -= 0.05
-        cfg["sy"] -= 0.05
-        cfg["sz"] -= 0.05
-
-    elif key == ord("n"):
-        main_id = (main_id + 1) % len(configs)
-        cfg = configs[main_id]
-        SENSOR_MIN = float(cfg.get("SENSOR_MIN", 15.0))
-        SENSOR_MAX = float(cfg.get("SENSOR_MAX", 100.0))
-        SMOOTHING = float(cfg.get("SMOOTHING", 0.08))
-        print("Loaded config:", main_id)
-
-KEYBOARD.close()
-DISPLAY.destroy()
+finally:
+    ser.close()
+    keys.close()
+    DISPLAY.destroy()
