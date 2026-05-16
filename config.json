@@ -20,7 +20,7 @@
       "sensorMin": 10,
       "sensorMax": 100,
 
-      "smoothing": 0.12
+      "smoothing": 0.05
 
     },
     
@@ -43,7 +43,7 @@
       "sensorMax": 100,
 
 
-      "smoothing": 0.12
+      "smoothing": 0.05
 
     },
 
@@ -67,7 +67,7 @@
       "sensorMax": 100,
 
 
-      "smoothing": 0.12
+      "smoothing": 0.05
     },
 
     {
@@ -90,7 +90,7 @@
       "sensorMax": 100,
 
 
-      "smoothing": 0.12
+      "smoothing": 0.05
 
 
     },
@@ -116,7 +116,7 @@
 
 
 
-      "smoothing": 0.12
+      "smoothing": 0.05
 
     }
   ]
