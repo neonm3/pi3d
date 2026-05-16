@@ -25,7 +25,7 @@
     {
       "modelA": "img/eye_00004_open.obj",
       "modelB": "img/eye_00004_closed.obj",
-      "texture": "img/eye_00004.jpg",
+      "texture": "img/eye_00004.jpeg",
 
       "x": 0.0,
       "y": -0.5,
@@ -45,7 +45,7 @@
     {
       "modelA": "img/eye_00007_open.obj",
       "modelB": "img/eye_00007_closed.obj",
-      "texture": "img/eye_00007.jpg",
+      "texture": "img/eye_00007.jpeg",
 
       "x": 1.0,
       "y": 0.0,
@@ -65,7 +65,7 @@
     {
      "modelA": "img/eye_00010_open.obj",
       "modelB": "img/eye_00010_closed.obj",
-      "texture": "img/eye_00010.jpg",
+      "texture": "img/eye_00010.jpeg",
 
       "x": -1.0,
       "y": 0.5,
@@ -85,7 +85,7 @@
  {
       "modelA": "img/eye_00024_open.obj",
       "modelB": "img/eye_00024_closed.obj",
-      "texture": "img/eye_00024.jpg",
+      "texture": "img/eye_00024.jpeg",
 
       "x": 1.0,
       "y": 0.0,
