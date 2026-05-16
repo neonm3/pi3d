@@ -23,8 +23,12 @@ config_data = load_config_file()
 main_id = config_data["main"]
 config = config_data["configs"][main_id]
 
+cycle_seconds = config_data.get("cycle", 0)
+last_cycle_time = time.time()
+
 
 def apply_config(new_main_id):
+    global cycle_seconds
     global main_id, config
     global OBJ_A, OBJ_B, TEXTURE
     global pos_x, pos_y, pos_z
@@ -37,6 +41,7 @@ def apply_config(new_main_id):
     main_id = new_main_id
     config_data["main"] = main_id
     config = config_data["configs"][main_id]
+    cycle_seconds = config_data.get("cycle", 0)
 
     OBJ_A = config["modelA"]
     OBJ_B = config["modelB"]
@@ -126,8 +131,9 @@ def save_current_config():
     print("Saved selected config:", main_id)
 
 
-def load_next_config():
-    save_current_config()
+def load_next_config(auto=False):
+	if not auto:
+    	save_current_config()
 
     total = len(config_data["configs"])
     next_id = (main_id + 1) % total
@@ -320,6 +326,17 @@ try:
         )
 
         modelA.draw()
+        
+        # ------------------------------------------
+        # AUTO CONFIG CYCLING
+        # ------------------------------------------
+
+        if cycle_seconds > 0:
+            now = time.time()
+
+            if now - last_cycle_time >= cycle_seconds:
+                load_next_config(auto=True)
+                last_cycle_time = now
 
         # ------------------------------------------
         # KEYBOARD
@@ -335,8 +352,9 @@ try:
             save_current_config()
 
         # SPACE saves current config and loads next main config
-        elif key == 32:
-            load_next_config()
+		elif key == 32:
+		    load_next_config()
+		    last_cycle_time = time.time()
 
         # motion
         elif key == ord("a"):

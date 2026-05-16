@@ -1,5 +1,6 @@
 {
   "main": 0,
+  "cycle": 10,
 
   "configs": [
     {
