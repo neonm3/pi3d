@@ -6,41 +6,100 @@ import pi3d
 import os
 
 CONFIG_FILE = "config.json"
-
 SERIAL_PORT = "/dev/ttyUSB0"
 BAUDRATE = 115200
 
+
 # --------------------------------------------------
-# LOAD CONFIG
+# LOAD / SAVE CONFIG
 # --------------------------------------------------
 
-with open(CONFIG_FILE, "r") as f:
-    config_data = json.load(f)
+def load_config_file():
+    with open(CONFIG_FILE, "r") as f:
+        return json.load(f)
 
+
+config_data = load_config_file()
 main_id = config_data["main"]
 config = config_data["configs"][main_id]
 
-OBJ_A = config["modelA"]
-OBJ_B = config["modelB"]
-TEXTURE = config["texture"]
 
-pos_x = config["x"]
-pos_y = config["y"]
-pos_z = config["z"]
+def apply_config(new_main_id):
+    global main_id, config
+    global OBJ_A, OBJ_B, TEXTURE
+    global pos_x, pos_y, pos_z
+    global scale_x, scale_y, scale_z
+    global motion
+    global SENSOR_MIN, SENSOR_MAX, SMOOTHING
+    global texture, modelA, modelB
+    global inputSensorValue, morphAmount
 
-scale_x = config["sx"]
-scale_y = config["sy"]
-scale_z = config["sz"]
+    main_id = new_main_id
+    config_data["main"] = main_id
+    config = config_data["configs"][main_id]
 
-motion = config["motion"]
+    OBJ_A = config["modelA"]
+    OBJ_B = config["modelB"]
+    TEXTURE = config["texture"]
 
-SENSOR_MIN = config["sensorMin"]
-SENSOR_MAX = config["sensorMax"]
-SMOOTHING = config["smoothing"]
+    pos_x = config["x"]
+    pos_y = config["y"]
+    pos_z = config["z"]
 
-# --------------------------------------------------
-# SAVE CONFIG
-# --------------------------------------------------
+    scale_x = config["sx"]
+    scale_y = config["sy"]
+    scale_z = config["sz"]
+
+    motion = config["motion"]
+
+    SENSOR_MIN = config["sensorMin"]
+    SENSOR_MAX = config["sensorMax"]
+    SMOOTHING = config["smoothing"]
+
+    texture = pi3d.Texture(TEXTURE, mipmap=False)
+
+    modelA = pi3d.Model(
+        file_string=OBJ_A,
+        x=pos_x,
+        y=pos_y,
+        z=pos_z,
+        sx=scale_x,
+        sy=scale_y,
+        sz=scale_z
+    )
+
+    modelB = pi3d.Model(file_string=OBJ_B)
+
+    modelA.set_shader(shader)
+    modelA.set_draw_details(shader, [texture])
+    modelA.set_material((1.0, 1.0, 1.0))
+
+    print("")
+    print("Using config:", main_id)
+    print("modelA:", OBJ_A)
+    print("modelB:", OBJ_B)
+    print("texture:", TEXTURE)
+    print("buffers A:", len(modelA.buf))
+    print("buffers B:", len(modelB.buf))
+
+    if len(modelA.buf) != len(modelB.buf):
+        raise ValueError("OBJ files must have same number of mesh buffers")
+
+    for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
+        print("buffer", i)
+        print("verts A:", len(bufA.array_buffer))
+        print("verts B:", len(bufB.array_buffer))
+
+        if len(bufA.array_buffer) != len(bufB.array_buffer):
+            raise ValueError("OBJ files must have identical topology")
+
+        positionB = bufB.array_buffer[:, 0:3].copy()
+        bufA.array_buffer[:, 3:6] = positionB
+        bufA._loaded_opengl = False
+
+    inputSensorValue = 0.0
+    morphAmount = 0.0
+
 
 def save_current_config():
     current_config = config_data["configs"][main_id]
@@ -59,10 +118,29 @@ def save_current_config():
     current_config["sensorMax"] = SENSOR_MAX
     current_config["smoothing"] = SMOOTHING
 
+    config_data["main"] = main_id
+
     with open(CONFIG_FILE, "w") as f:
         json.dump(config_data, f, indent=4)
 
     print("Saved selected config:", main_id)
+
+
+def load_next_config():
+    save_current_config()
+
+    total = len(config_data["configs"])
+    next_id = (main_id + 1) % total
+
+    config_data["main"] = next_id
+
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config_data, f, indent=4)
+
+    apply_config(next_id)
+
+    print("Switched to config:", next_id)
+
 
 # --------------------------------------------------
 # DISPLAY
@@ -72,10 +150,12 @@ DISPLAY = pi3d.Display.create(
     frames_per_second=60,
     background=(0.0, 0.0, 0.0, 1.0)
 )
+
 os.system("unclutter -idle 0 &")
 DISPLAY.mouse = False
 
 CAMERA = pi3d.Camera()
+
 
 # --------------------------------------------------
 # SHADERS
@@ -104,7 +184,6 @@ void main(void) {
     vec3 pos = mix(positionA, positionB, morphAmount);
 
     gl_Position = modelviewmatrix[1] * modelviewmatrix[0] * vec4(pos, 1.0);
-
     uv = texcoord;
 }
 """
@@ -127,6 +206,7 @@ shader = pi3d.Shader(
     fshader_source=FRAG_SHADER
 )
 
+
 # --------------------------------------------------
 # HELPERS
 # --------------------------------------------------
@@ -134,63 +214,25 @@ shader = pi3d.Shader(
 def clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
+
 def remap_sensor(v):
     v = clamp(v, SENSOR_MIN, SENSOR_MAX)
     return (v - SENSOR_MIN) / (SENSOR_MAX - SENSOR_MIN)
 
-# --------------------------------------------------
-# TEXTURE / MODELS
-# --------------------------------------------------
-
-texture = pi3d.Texture(TEXTURE, mipmap=False)
-
-modelA = pi3d.Model(
-    file_string=OBJ_A,
-    x=pos_x,
-    y=pos_y,
-    z=pos_z,
-    sx=scale_x,
-    sy=scale_y,
-    sz=scale_z
-)
-
-modelB = pi3d.Model(file_string=OBJ_B)
-
-modelA.set_shader(shader)
-modelA.set_draw_details(shader, [texture])
-modelA.set_material((1.0, 1.0, 1.0))
-
-print("Using config:", main_id)
-print("modelA:", OBJ_A)
-print("modelB:", OBJ_B)
-print("texture:", TEXTURE)
-
-print("buffers A:", len(modelA.buf))
-print("buffers B:", len(modelB.buf))
-
-if len(modelA.buf) != len(modelB.buf):
-    raise ValueError("OBJ files must have same number of mesh buffers")
 
 # --------------------------------------------------
-# COPY MODEL B POSITIONS INTO NORMAL COLUMNS
+# INITIAL MODEL LOAD
 # --------------------------------------------------
 
-for i, (bufA, bufB) in enumerate(zip(modelA.buf, modelB.buf)):
-    print("buffer", i)
-    print("verts A:", len(bufA.array_buffer))
-    print("verts B:", len(bufB.array_buffer))
+texture = None
+modelA = None
+modelB = None
 
-    if len(bufA.array_buffer) != len(bufB.array_buffer):
-        raise ValueError("OBJ files must have identical topology")
+inputSensorValue = 0.0
+morphAmount = 0.0
 
-    positionB = bufB.array_buffer[:, 0:3].copy()
+apply_config(main_id)
 
-    # vertex = model A position
-    # normal = model B position / morph target
-    bufA.array_buffer[:, 3:6] = positionB
-
-    # force GPU upload
-    bufA._loaded_opengl = False
 
 # --------------------------------------------------
 # INPUT
@@ -206,16 +248,14 @@ ser = serial.Serial(
 
 serial_buffer = ""
 
+
 # --------------------------------------------------
 # STATE
 # --------------------------------------------------
 
 start_time = time.time()
-
 global_scale = 1.0
 
-inputSensorValue = 0.0
-morphAmount = 0.0
 
 # --------------------------------------------------
 # MAIN LOOP
@@ -290,78 +330,65 @@ try:
         if key == 27:
             break
 
-        # save selected config back into config.json
+        # ENTER saves selected config
         elif key == 10 or key == 13:
             save_current_config()
+
+        # SPACE saves current config and loads next main config
+        elif key == 32:
+            load_next_config()
 
         # motion
         elif key == ord("a"):
             motion += 0.1
-
         elif key == ord("z"):
             motion = max(0.0, motion - 0.1)
 
         # global temporary scale, not saved
         elif key == ord("s"):
             global_scale += 0.05
-
         elif key == ord("x"):
             global_scale = max(0.05, global_scale - 0.05)
 
         # position
         elif key == ord("j"):
             pos_x -= 0.1
-
         elif key == ord("l"):
             pos_x += 0.1
-
         elif key == ord("i"):
             pos_y += 0.1
-
         elif key == ord("k"):
             pos_y -= 0.1
-
         elif key == ord("u"):
             pos_z += 0.1
-
         elif key == ord("o"):
             pos_z -= 0.1
 
         # actual saved model scale
         elif key == ord("1"):
             scale_x -= 0.05
-
         elif key == ord("2"):
             scale_x += 0.05
-
         elif key == ord("3"):
             scale_y -= 0.05
-
         elif key == ord("4"):
             scale_y += 0.05
-
         elif key == ord("5"):
             scale_z -= 0.05
-
         elif key == ord("6"):
             scale_z += 0.05
 
         # sensor calibration
         elif key == ord("q"):
             SENSOR_MIN -= 1.0
-
         elif key == ord("w"):
             SENSOR_MIN += 1.0
-
         elif key == ord("e"):
             SENSOR_MAX -= 1.0
-
         elif key == ord("r"):
             SENSOR_MAX += 1.0
-
         elif key == ord("t"):
             SMOOTHING = max(0.001, SMOOTHING - 0.01)
-
         elif key == ord("y"):
             SMOOTHING = min(1.0, SMOOTHING + 0.01)
 
