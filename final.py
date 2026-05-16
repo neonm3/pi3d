@@ -132,8 +132,8 @@ def save_current_config():
 
 
 def load_next_config(auto=False):
-	if not auto:
-		save_current_config()
+    if not auto:
+        save_current_config()
 
     total = len(config_data["configs"])
     next_id = (main_id + 1) % total
