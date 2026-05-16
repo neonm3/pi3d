@@ -1,5 +1,5 @@
 {
-  "main": 1,
+  "main": 0,
 
   "configs": [
     {
@@ -26,26 +26,6 @@
       "modelA": "img/eye_00018_open.obj",
       "modelB": "img/eye_00018_closed.obj",
       "texture": "img/eye_00018.jpeg",
-
-      "x": 0.0,
-      "y": -0.5,
-      "z": 6.0,
-
-      "sx": 1.2,
-      "sy": 1.2,
-      "sz": 1.2,
-
-      "motion": 0.5,
-
-      "sensorMin": 20.0,
-      "sensorMax": 120.0,
-      "smoothing": 0.04
-    },
-
-    {
-      "modelA": "img/eye_00004_open.obj",
-      "modelB": "img/eye_00004_closed.obj",
-      "texture": "img/eye_00004.jpeg",
 
       "x": 0.0,
       "y": -0.5,
@@ -120,6 +100,25 @@
       "sensorMin": 10.0,
       "sensorMax": 80.0,
       "smoothing": 0.12
+    },
+    {
+      "modelA": "img/eye_00004_open.obj",
+      "modelB": "img/eye_00004_closed.obj",
+      "texture": "img/eye_00004.jpeg",
+
+      "x": 0.0,
+      "y": -0.5,
+      "z": 6.0,
+
+      "sx": 1.2,
+      "sy": 1.2,
+      "sz": 1.2,
+
+      "motion": 0.5,
+
+      "sensorMin": 20.0,
+      "sensorMax": 120.0,
+      "smoothing": 0.04
     }
   ]
 }
