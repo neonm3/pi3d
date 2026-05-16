@@ -3,9 +3,9 @@
 
   "configs": [
     {
-      "modelA": "eyeOpen.obj",
-      "modelB": "eyeClosed.obj",
-      "texture": "eyeTexture.png",
+      "modelA": "img/eye_00001_open.obj",
+      "modelB": "img/eye_00001_closed.obj",
+      "texture": "img/eye_00001.png",
 
       "x": 0.0,
       "y": 0.0,
@@ -23,9 +23,9 @@
     },
 
     {
-      "modelA": "eye2Open.obj",
-      "modelB": "eye2Closed.obj",
-      "texture": "eye2Texture.png",
+      "modelA": "img/eye_00004_open.obj",
+      "modelB": "img/eye_00004_closed.obj",
+      "texture": "img/eye_00004.jpg",
 
       "x": 0.0,
       "y": -0.5,
@@ -43,9 +43,9 @@
     },
 
     {
-      "modelA": "maskOpen.obj",
-      "modelB": "maskClosed.obj",
-      "texture": "maskTexture.png",
+      "modelA": "img/eye_00007_open.obj",
+      "modelB": "img/eye_00007_closed.obj",
+      "texture": "img/eye_00007.jpg",
 
       "x": 1.0,
       "y": 0.0,
@@ -63,9 +63,9 @@
     },
 
     {
-      "modelA": "branchOpen.obj",
-      "modelB": "branchClosed.obj",
-      "texture": "branchTexture.png",
+     "modelA": "img/eye_00010_open.obj",
+      "modelB": "img/eye_00010_closed.obj",
+      "texture": "img/eye_00010.jpg",
 
       "x": -1.0,
       "y": 0.5,
@@ -80,6 +80,26 @@
       "sensorMin": 30.0,
       "sensorMax": 140.0,
       "smoothing": 0.02
-    }
+    },
+    
+ {
+      "modelA": "img/eye_00024_open.obj",
+      "modelB": "img/eye_00024_closed.obj",
+      "texture": "img/eye_00024.jpg",
+
+      "x": 1.0,
+      "y": 0.0,
+      "z": 7.0,
+
+      "sx": 0.8,
+      "sy": 0.8,
+      "sz": 0.8,
+
+      "motion": 2.0,
+
+      "sensorMin": 10.0,
+      "sensorMax": 80.0,
+      "smoothing": 0.12
+    },
   ]
 }
