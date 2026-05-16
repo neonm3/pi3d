@@ -352,9 +352,9 @@ try:
             save_current_config()
 
         # SPACE saves current config and loads next main config
-		elif key == 32:
-		    load_next_config()
-		    last_cycle_time = time.time()
+        elif key == 32:
+            load_next_config()
+            last_cycle_time = time.time()
 
         # motion
         elif key == ord("a"):
