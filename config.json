@@ -8,19 +8,20 @@
       "modelB": "img/eye_00001_closed.obj",
       "texture": "img/eye_00001.png",
 
-      "x": 0.0,
+           "x": 0.0,
       "y": 0.0,
-      "z": 5.0,
+      "z": 2.0,
 
-      "sx": 1.0,
-      "sy": 1.0,
-      "sz": 1.0,
+      "sx": 10,
+      "sy": 10,
+      "sz": 10,
 
       "motion": 1.0,
 
-      "sensorMin": 15.0,
-      "sensorMax": 100.0,
-      "smoothing": 0.08
+      "sensorMin": 100.0,
+      "sensorMax": 200.0,
+      "smoothing": 0.12
+
     },
     
      {
@@ -28,19 +29,20 @@
       "modelB": "img/eye_00018_closed.obj",
       "texture": "img/eye_00018.jpeg",
 
-      "x": 0.0,
-      "y": -0.5,
-      "z": 6.0,
+       "x": 0.0,
+      "y": 0.0,
+      "z": 2.0,
 
-      "sx": 1.2,
-      "sy": 1.2,
-      "sz": 1.2,
+      "sx": 10,
+      "sy": 10,
+      "sz": 10,
 
-      "motion": 0.5,
+      "motion": 1.0,
 
-      "sensorMin": 20.0,
-      "sensorMax": 120.0,
-      "smoothing": 0.04
+      "sensorMin": 100.0,
+      "sensorMax": 200.0,
+      "smoothing": 0.12
+
     },
 
     {
@@ -48,18 +50,18 @@
       "modelB": "img/eye_00007_closed.obj",
       "texture": "img/eye_00007.jpeg",
 
-      "x": 1.0,
+      "x": 0.0,
       "y": 0.0,
-      "z": 7.0,
+      "z": 2.0,
 
-      "sx": 0.8,
-      "sy": 0.8,
-      "sz": 0.8,
+      "sx": 10,
+      "sy": 10,
+      "sz": 10,
 
-      "motion": 2.0,
+      "motion": 1.0,
 
-      "sensorMin": 10.0,
-      "sensorMax": 80.0,
+      "sensorMin": 100.0,
+      "sensorMax": 200.0,
       "smoothing": 0.12
     },
 
@@ -68,19 +70,20 @@
       "modelB": "img/eye_00010_closed.obj",
       "texture": "img/eye_00010.jpeg",
 
-      "x": -1.0,
-      "y": 0.5,
-      "z": 4.5,
+      "x": 0.0,
+      "y": 0.0,
+      "z": 2.0,
 
-      "sx": 1.5,
-      "sy": 1.5,
-      "sz": 1.5,
+      "sx": 10,
+      "sy": 10,
+      "sz": 10,
 
-      "motion": 0.2,
+      "motion": 1.0,
 
-      "sensorMin": 30.0,
-      "sensorMax": 140.0,
-      "smoothing": 0.02
+      "sensorMin": 100.0,
+      "sensorMax": 200.0,
+      "smoothing": 0.12
+
     },
     
  {
@@ -88,38 +91,40 @@
       "modelB": "img/eye_00024_closed.obj",
       "texture": "img/eye_00024.jpeg",
 
-      "x": 1.0,
+         "x": 0.0,
       "y": 0.0,
-      "z": 7.0,
+      "z": 2.0,
 
-      "sx": 0.8,
-      "sy": 0.8,
-      "sz": 0.8,
+      "sx": 10,
+      "sy": 10,
+      "sz": 10,
 
-      "motion": 2.0,
+      "motion": 1.0,
 
-      "sensorMin": 10.0,
-      "sensorMax": 80.0,
+      "sensorMin": 100.0,
+      "sensorMax": 200.0,
       "smoothing": 0.12
+
     },
     {
       "modelA": "img/eye_00004_open.obj",
       "modelB": "img/eye_00004_closed.obj",
       "texture": "img/eye_00004.jpeg",
 
-      "x": 0.0,
-      "y": -0.5,
-      "z": 6.0,
+           "x": 0.0,
+      "y": 0.0,
+      "z": 2.0,
 
-      "sx": 1.2,
-      "sy": 1.2,
-      "sz": 1.2,
+      "sx": 10,
+      "sy": 10,
+      "sz": 10,
 
-      "motion": 0.5,
+      "motion": 1.0,
 
-      "sensorMin": 20.0,
-      "sensorMax": 120.0,
-      "smoothing": 0.04
+      "sensorMin": 100.0,
+      "sensorMax": 200.0,
+      "smoothing": 0.12
+
     }
   ]
 }
