@@ -70,8 +70,6 @@ DISPLAY = pi3d.Display.create(
     background=(0.0, 0.0, 0.0, 1.0)
 )
 
-DISPLAY.hide_cursor()
-
 CAMERA = pi3d.Camera()
 KEYBOARD = pi3d.Keyboard()
 
