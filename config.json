@@ -1,5 +1,5 @@
 {
-  "main": 0,
+  "main": 1,
 
   "configs": [
     {
@@ -20,6 +20,26 @@
       "sensorMin": 15.0,
       "sensorMax": 100.0,
       "smoothing": 0.08
+    },
+    
+     {
+      "modelA": "img/eye_00018_open.obj",
+      "modelB": "img/eye_00018_closed.obj",
+      "texture": "img/eye_00018.jpeg",
+
+      "x": 0.0,
+      "y": -0.5,
+      "z": 6.0,
+
+      "sx": 1.2,
+      "sy": 1.2,
+      "sz": 1.2,
+
+      "motion": 0.5,
+
+      "sensorMin": 20.0,
+      "sensorMax": 120.0,
+      "smoothing": 0.04
     },
 
     {
