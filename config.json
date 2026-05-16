@@ -17,7 +17,7 @@
       "sz": 6,
       
       "motion": 1.0,
-      "sensorMin": 60,
+      "sensorMin": 80,
       "sensorMax": 110,
 
       "smoothing": 0.12
@@ -39,7 +39,7 @@
 
 
       "motion": 1.0,
-      "sensorMin": 60,
+      "sensorMin": 80,
       "sensorMax": 110,
 
       "smoothing": 0.12
@@ -62,7 +62,7 @@
 
       "motion": 1.0,
 
-      "sensorMin": 60,
+      "sensorMin": 80,
       "sensorMax": 110,
 
 
@@ -85,7 +85,7 @@
 
       "motion": 1.0,
 
-      "sensorMin": 60,
+      "sensorMin": 80,
       "sensorMax": 110,
 
       "smoothing": 0.12
@@ -109,7 +109,7 @@
 
       "motion": 1.0,
 
-      "sensorMin": 60,
+      "sensorMin": 80,
       "sensorMax": 110,
 
 
@@ -131,7 +131,7 @@
 
 
       "motion": 1.0,
-      "sensorMin": 60,
+      "sensorMin": 80,
       "sensorMax": 110,
 
 
