@@ -4,8 +4,8 @@
 
   "configs": [
     {
-      "modelA": "img/eye_00001_open.obj",
-      "modelB": "img/eye_00001_closed.obj",
+      "modelB": "img/eye_00001_open.obj",
+      "modelA": "img/eye_00001_closed.obj",
       "texture": "img/eye_00001.png",
 
       "x": 0.0,
@@ -25,8 +25,8 @@
     },
     
      {
-      "modelA": "img/eye_00018_open.obj",
-      "modelB": "img/eye_00018_closed.obj",
+      "modelB": "img/eye_00018_open.obj",
+      "modelA": "img/eye_00018_closed.obj",
       "texture": "img/eye_00018.jpeg",
 
            "x": 0.0,
@@ -48,8 +48,8 @@
     },
 
     {
-      "modelA": "img/eye_00007_open.obj",
-      "modelB": "img/eye_00007_closed.obj",
+      "modelB": "img/eye_00007_open.obj",
+      "modelA": "img/eye_00007_closed.obj",
       "texture": "img/eye_00007.jpeg",
 
            "x": 0.0,
@@ -71,8 +71,8 @@
     },
 
     {
-     "modelA": "img/eye_00010_open.obj",
-      "modelB": "img/eye_00010_closed.obj",
+     "modelB": "img/eye_00010_open.obj",
+      "modelA": "img/eye_00010_closed.obj",
       "texture": "img/eye_00010.jpeg",
 
            "x": 0.0,
@@ -96,8 +96,8 @@
     },
     
  {
-      "modelA": "img/eye_00024_open.obj",
-      "modelB": "img/eye_00024_closed.obj",
+      "modelB": "img/eye_00024_open.obj",
+      "modelA": "img/eye_00024_closed.obj",
       "texture": "img/eye_00024.jpeg",
 
            "x": 0.0,
@@ -120,8 +120,8 @@
 
     },
     {
-      "modelA": "img/eye_00004_open.obj",
-      "modelB": "img/eye_00004_closed.obj",
+      "modelB": "img/eye_00004_open.obj",
+      "modelA": "img/eye_00004_closed.obj",
       "texture": "img/eye_00004.jpeg",
 
            "x": 0.0,
