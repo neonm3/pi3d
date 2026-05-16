@@ -17,9 +17,8 @@
       "sz": 5,
       
       "motion": 1.0,
-
-      "sensorMin": 00.0,
-      "sensorMax": 10.0,
+      "sensorMin": 0,
+      "sensorMax": 10,
       "smoothing": 0.12
 
     },
@@ -39,9 +38,8 @@
 
 
       "motion": 1.0,
-
-      "sensorMin": 00.0,
-      "sensorMax": 10.0,
+      "sensorMin": 0,
+      "sensorMax": 10,
       "smoothing": 0.12
 
     },
@@ -62,8 +60,9 @@
 
       "motion": 1.0,
 
-      "sensorMin": 00.0,
-      "sensorMax": 10.0,
+      "sensorMin": 0,
+      "sensorMax": 10,
+
       "smoothing": 0.12
     },
 
@@ -83,8 +82,9 @@
 
       "motion": 1.0,
 
-      "sensorMin": 00.0,
-      "sensorMax": 10.0,
+      "sensorMin": 0,
+      "sensorMax": 10,
+
       "smoothing": 0.12
 
 
@@ -106,8 +106,9 @@
 
       "motion": 1.0,
 
-      "sensorMin": 00.0,
-      "sensorMax": 10.0,
+      "sensorMin": 0,
+      "sensorMax": 10,
+
       "smoothing": 0.12
 
     },
@@ -126,9 +127,9 @@
 
 
       "motion": 1.0,
+      "sensorMin": 0,
+      "sensorMax": 10,
 
-      "sensorMin": 00.0,
-      "sensorMax": 10.0,
       "smoothing": 0.12
 
 
