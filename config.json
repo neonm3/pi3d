@@ -118,30 +118,6 @@
 
       "smoothing": 0.12
 
-    },
-    {
-      "modelB": "img/eye_00004_open.obj",
-      "modelA": "img/eye_00004_closed.obj",
-      "texture": "img/eye_00004.jpeg",
-
-           "x": 0.0,
-      "y": 0.0,
-      "z": 5.0,
-
- "sx": 6,
-      "sy": 6,
-      "sz": 6,
-
-
-      "motion": 1.0,
-      "sensorMin": 10,
-      "sensorMax": 100,
-
-
-
-      "smoothing": 0.12
-
-
     }
   ]
 }
